@@ -11,7 +11,6 @@ import toast, { Toaster } from "react-hot-toast";
 
 export default function App() {
   const [number, setNumber] = useState("");
-  const [amount, setAmount] = useState("");
   const [data, setData] = useState([]);
 
   useEffect(() => {
@@ -27,18 +26,16 @@ export default function App() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!number || !amount) {
-      toast.error("Fill all fields");
+    if (!number) {
+      toast.error("Enter number");
       return;
     }
 
     await addDoc(collection(db, "records"), {
       number,
-      amount,
     });
 
     setNumber("");
-    setAmount("");
     toast.success("Record added successfully ✅");
   };
 
@@ -56,25 +53,39 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       <Toaster position="top-right" />
 
+      <div className="fixed top-5 left-4 z-50">
+        <a
+          href="https://drive.google.com/file/d/1vFxI9iRS_pzv0JozfTZAjTyKQINTAeBX/view?usp=drive_link"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textDecoration: "none" }}
+        >
+          <button className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/20 backdrop-blur-lg border border-white/30 shadow-xl hover:scale-105 transition">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
+              alt="Drive"
+              className="w-7 h-7"
+            />
+            <div className="text-left">
+              <p className="text-xs text-gray-600">Get the app</p>
+              <p className="font-semibold text-gray-800">Download APK</p>
+            </div>
+          </button>
+        </a>
+      </div>
+
       <div className="w-full max-w-2xl bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-6 border border-gray-200">
         <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           🚀 Quick Data Manager
         </h1>
 
         {/* Input Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           <input
             className="border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="Enter Number"
             value={number}
             onChange={(e) => setNumber(e.target.value)}
-          />
-
-          <input
-            className="border rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Enter Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
           />
 
           <button
@@ -96,9 +107,6 @@ export default function App() {
                 <p className="text-gray-700 text-sm">
                   <span className="font-semibold">Number:</span> {item.number}
                 </p>
-                <p className="text-gray-700 text-sm">
-                  <span className="font-semibold">Amount:</span> {item.amount}
-                </p>
               </div>
 
               <div className="flex gap-2 flex-wrap">
@@ -107,13 +115,6 @@ export default function App() {
                   className="px-3 py-1 bg-slate-200 rounded-lg hover:bg-slate-300 text-sm"
                 >
                   Copy No
-                </button>
-
-                <button
-                  onClick={() => copyText(item.amount)}
-                  className="px-3 py-1 bg-slate-200 rounded-lg hover:bg-slate-300 text-sm"
-                >
-                  Copy Amt
                 </button>
 
                 <button
