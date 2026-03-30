@@ -6,6 +6,9 @@ import {
   deleteDoc,
   doc,
   onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp,
 } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -14,7 +17,10 @@ export default function App() {
   const [data, setData] = useState([]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "records"), (snapshot) => {
+    // 🔥 Order by latest first
+    const q = query(collection(db, "records"), orderBy("createdAt", "desc"));
+
+    const unsub = onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -33,6 +39,7 @@ export default function App() {
 
     await addDoc(collection(db, "records"), {
       number,
+      createdAt: serverTimestamp(), // 🕒 add timestamp
     });
 
     setNumber("");
@@ -52,27 +59,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
       <Toaster position="top-right" />
-
-      <div className="fixed top-5 left-4 z-50">
-        <a
-          href="https://drive.google.com/file/d/174yAsyTZWD-6cdUycCsPGtWpvGcSLnEQ/view?usp=drive_link"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ textDecoration: "none" }}
-        >
-          <button className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/20 backdrop-blur-lg border border-white/30 shadow-xl hover:scale-105 transition">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png"
-              alt="Drive"
-              className="w-7 h-7"
-            />
-            <div className="text-left">
-              <p className="text-xs text-gray-600">Get the app</p>
-              <p className="font-semibold text-gray-800">Download APK</p>
-            </div>
-          </button>
-        </a>
-      </div>
 
       <div className="w-full max-w-2xl bg-white/80 backdrop-blur-lg shadow-2xl rounded-3xl p-6 border border-gray-200">
         <h1 className="text-2xl font-bold text-gray-800 mb-4 text-center">
@@ -98,12 +84,15 @@ export default function App() {
 
         {/* Records List */}
         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
-          {data.map((item) => (
+          {data.map((item, index) => (
             <div
               key={item.id}
               className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 hover:shadow-lg transition"
             >
               <div>
+                <p className="text-gray-700 text-sm">
+                  <span className="font-semibold">Serial:</span> {index + 1}
+                </p>
                 <p className="text-gray-700 text-sm">
                   <span className="font-semibold">Number:</span> {item.number}
                 </p>
