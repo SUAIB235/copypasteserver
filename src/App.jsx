@@ -215,7 +215,7 @@ export default function App() {
 
             <button
               onClick={() =>
-                window.open("https://scammers-data.vercel.app/")
+                window.open("https://drive.google.com/file/d/1tT9eLOoWFW9UemD65WAgtCKaBddbH742/view?usp=drivesdk")
               }
               className="bg-gray-100 px-4 py-3 rounded-lg w-full text-left"
             >
