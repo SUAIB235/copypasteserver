@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, auth, provider } from "./firebase";
+import { db } from "./firebase";
 
 import {
   collection,
@@ -14,29 +14,22 @@ import {
   increment,
   getDoc,
   setDoc,
-  getDocs, // ✅ ADD THIS
 } from "firebase/firestore";
-
-import { signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 
 import toast, { Toaster } from "react-hot-toast";
 
-import { FaRocket, FaGoogle, FaCopy } from "react-icons/fa";
+import { FaRocket, FaCopy } from "react-icons/fa";
 import {
   BsActivity,
   BsDownload,
   BsGrid,
   BsX,
-  BsBoxArrowRight,
   BsTrash,
   BsPencil,
 } from "react-icons/bs";
 import { MdReport } from "react-icons/md";
 
 export default function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
   const [accessKey, setAccessKey] = useState("");
   const [showKeySetup, setShowKeySetup] = useState(true);
 
@@ -48,34 +41,14 @@ export default function App() {
   const [showViews, setShowViews] = useState(false);
   const [showServices, setShowServices] = useState(false);
 
-  // 🔐 AUTH
+  // 🔑 LOAD KEY FROM LOCAL STORAGE
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return () => unsub();
+    const savedKey = localStorage.getItem("accessKey");
+    if (savedKey) {
+      setAccessKey(savedKey);
+      setShowKeySetup(false);
+    }
   }, []);
-
-  // 🔑 LOAD KEY FROM FIREBASE
-  useEffect(() => {
-    if (!user) return;
-
-    const loadKey = async () => {
-      const ref = doc(db, "users", user.uid, "config", "main");
-      const snap = await getDoc(ref);
-
-      if (snap.exists()) {
-        const savedKey = snap.data().accessKey;
-        if (savedKey) {
-          setAccessKey(savedKey);
-          setShowKeySetup(false);
-        }
-      }
-    };
-
-    loadKey();
-  }, [user]);
 
   // 📊 LOAD RECORDS
   useEffect(() => {
@@ -83,7 +56,7 @@ export default function App() {
 
     const q = query(
       collection(db, "keys", accessKey, "records"),
-      orderBy("createdAt", "desc"),
+      orderBy("createdAt", "desc")
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
@@ -99,7 +72,7 @@ export default function App() {
 
     const q = query(
       collection(db, "keys", accessKey, "services"),
-      orderBy("createdAt", "desc"),
+      orderBy("createdAt", "desc")
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
@@ -127,60 +100,28 @@ export default function App() {
     run();
   }, []);
 
-  // 🔐 LOGIN
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, provider);
-      toast.success("Logged in");
-    } catch {
-      toast.error("Login failed");
-    }
-  };
-
-  // 🔓 LOGOUT
-  const handleLogout = async () => {
-    await signOut(auth);
-    setAccessKey("");
-    setShowKeySetup(true);
-    toast.success("Logged out");
-  };
-
+  // 🔑 SAVE KEY
   const saveKey = async () => {
     if (!accessKey.trim()) {
       return toast.error("Enter valid key");
     }
 
-    const q = query(
-      collection(db, "keys", accessKey, "records"),
-      orderBy("createdAt", "desc"),
-    );
-
-    const snap = await getDocs(q);
-
-    // Optional: allow new keys
-    await setDoc(doc(db, "users", user.uid, "config", "main"), {
-      accessKey: accessKey,
-    });
-
-    await setDoc(doc(db, "users", user.uid, "config", "main"), {
-      accessKey: accessKey,
-    });
-
+    localStorage.setItem("accessKey", accessKey);
     setShowKeySetup(false);
+
     toast.success("Key saved");
   };
 
+  // ➕ ADD RECORD
   const handleSubmit = async () => {
     if (!number.trim()) return toast.error("Enter number");
 
-    // 🔹 Ensure key document exists
     await setDoc(
       doc(db, "keys", accessKey),
       { createdAt: serverTimestamp() },
-      { merge: true },
+      { merge: true }
     );
 
-    // 🔹 Add record
     await addDoc(collection(db, "keys", accessKey, "records"), {
       number,
       createdAt: serverTimestamp(),
@@ -190,7 +131,7 @@ export default function App() {
     toast.success("Added");
   };
 
-  // ❌ DELETE NUMBER
+  // ❌ DELETE
   const handleDelete = async (id) => {
     await deleteDoc(doc(db, "keys", accessKey, "records", id));
     toast.success("Deleted");
@@ -201,31 +142,7 @@ export default function App() {
     setTimeout(() => setShowViews(false), 3000);
   };
 
-  // ⏳ LOADING
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
-
-  // 🔐 LOGIN UI
-  if (!user) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#eef6f1]">
-        <button
-          onClick={handleLogin}
-          className="flex items-center gap-3 bg-white px-6 py-3 rounded-xl shadow hover:bg-green-50"
-        >
-          <FaGoogle className="text-red-500" />
-          Sign in with Google
-        </button>
-      </div>
-    );
-  }
-
-  // 🔑 KEY SETUP
+  // 🔑 KEY SETUP UI
   if (showKeySetup) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#eef6f1]">
@@ -235,12 +152,12 @@ export default function App() {
           <input
             value={accessKey}
             onChange={(e) => setAccessKey(e.target.value)}
-            className="border px-3 py-2 rounded-lg w-full mb-4"
+            className="border px-3 py-3 rounded-lg w-full mb-4"
           />
 
           <button
             onClick={saveKey}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg"
           >
             Continue
           </button>
@@ -258,70 +175,64 @@ export default function App() {
       <div className="absolute top-3 right-4 flex gap-3">
         <button
           onClick={handleViewClick}
-          className="bg-white p-2 rounded-full shadow hover:bg-green-50"
+          className="bg-white p-2 rounded-full shadow"
         >
           {showViews ? totalViews : <BsActivity />}
         </button>
 
         <button
-          onClick={() => window.open("https://drive.google.com/file/d/174yAsyTZWD-6cdUycCsPGtWpvGcSLnEQ/view?usp=drive_link")}
-          className="bg-white p-2 rounded-full shadow hover:bg-green-50"
+          onClick={() =>
+            window.open(
+              "https://drive.google.com/file/d/174yAsyTZWD-6cdUycCsPGtWpvGcSLnEQ/view",
+              "_blank"
+            )
+          }
+          className="bg-white p-2 rounded-full shadow"
         >
           <BsDownload />
         </button>
 
         <button
           onClick={() => setShowServices(true)}
-          className="bg-white p-2 rounded-full shadow hover:bg-green-50"
+          className="bg-white p-2 rounded-full shadow"
         >
           <BsGrid />
         </button>
-
-        <button
-          onClick={handleLogout}
-          className="bg-white p-2 rounded-full shadow hover:bg-green-50"
-        >
-          <BsBoxArrowRight className="text-red-500" />
-        </button>
       </div>
 
+      {/* SERVICES MODAL */}
       {showServices && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-sm p-5 relative animate-fadeIn">
-            {/* CLOSE BUTTON */}
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-5 w-[90%] max-w-sm relative">
             <button
               onClick={() => setShowServices(false)}
-              className="absolute top-3 right-3 text-gray-600 hover:text-red-500"
+              className="absolute top-3 right-3"
             >
-              <BsX className="text-2xl" />
+              <BsX />
             </button>
 
-            {/* TITLE */}
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              More Services
-            </h2>
+            <h2 className="mb-4 font-semibold">More Services</h2>
 
-            {/* LINKS */}
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => window.open("https://scammers-data.vercel.app/", "_blank")}
-                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-left w-full"
-              >
-                <MdReport className="text-[#00bc7d]" />
-                <span>Scammer Data</span>
-              </button>
-            </div>
+            <button
+              onClick={() =>
+                window.open("https://scammers-data.vercel.app/")
+              }
+              className="bg-gray-100 px-4 py-3 rounded-lg w-full text-left"
+            >
+              <MdReport className="inline mr-2 text-green-600" />
+              Scammer Data
+            </button>
           </div>
         </div>
       )}
 
       {/* MAIN CARD */}
-      <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-lg">
+      <div className="w-full max-w-2xl bg-white rounded-3xl p-4 sm:p-6 shadow-lg">
         <h1 className="text-center text-xl font-bold mb-3">
           <FaRocket className="inline text-green-600" /> Quick Data Manager
         </h1>
 
-        {/* KEY + EDIT */}
+        {/* KEY DISPLAY */}
         <div className="flex justify-center items-center gap-2 mb-4">
           <p className="text-sm text-gray-500">Key: {accessKey}</p>
 
@@ -333,27 +244,29 @@ export default function App() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-3 mb-6">
+        {/* INPUT + BUTTON (MOBILE FRIENDLY) */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <input
             value={number}
             onChange={(e) => setNumber(e.target.value)}
-            className="border px-4 py-2 rounded-xl"
+            className="flex-1 border px-4 py-3 rounded-xl text-base focus:ring-2 focus:ring-green-500"
             placeholder="Enter Number"
           />
 
           <button
             onClick={handleSubmit}
-            className="bg-green-600 text-white rounded-xl"
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium active:scale-95"
           >
-            Add Record
+            Add
           </button>
         </div>
 
+        {/* DATA LIST */}
         <div className="space-y-3 max-h-[400px] overflow-y-auto">
           {data.map((item, i) => (
             <div
               key={item.id}
-              className="bg-gray-50 p-3 rounded-xl flex justify-between items-center"
+              className="bg-gray-50 p-4 rounded-xl flex justify-between items-center shadow-sm"
             >
               <div>
                 <p className="text-xs text-gray-400">#{i + 1}</p>
@@ -366,14 +279,14 @@ export default function App() {
                     navigator.clipboard.writeText(item.number);
                     toast.success("Copied!");
                   }}
-                  className="bg-green-500 text-white px-2 py-1 rounded"
+                  className="bg-green-500 text-white px-3 py-2 rounded-lg active:scale-95"
                 >
                   <FaCopy />
                 </button>
 
                 <button
                   onClick={() => handleDelete(item.id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded"
+                  className="bg-red-500 text-white px-3 py-2 rounded-lg active:scale-95"
                 >
                   <BsTrash />
                 </button>
@@ -383,7 +296,9 @@ export default function App() {
         </div>
 
         {data.length === 0 && (
-          <p className="text-center text-gray-400 mt-4">No records yet</p>
+          <p className="text-center text-gray-400 mt-4">
+            No records yet
+          </p>
         )}
       </div>
     </div>
