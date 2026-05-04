@@ -18,7 +18,7 @@ import {
 
 import toast, { Toaster } from "react-hot-toast";
 
-import { FaRocket, FaCopy } from "react-icons/fa";
+import { FaRocket, FaKey, FaCopy } from "react-icons/fa";
 import {
   BsActivity,
   BsDownload,
