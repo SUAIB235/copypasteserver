@@ -147,17 +147,34 @@ export default function App() {
     return (
       <div className="h-screen flex items-center justify-center bg-[#eef6f1]">
         <div className="bg-white p-6 rounded-2xl shadow w-[90%] max-w-sm">
-          <h2 className="mb-4 font-semibold text-center">Enter Access Key</h2>
+          {/* 🔐 ICON */}
+          <div className="flex justify-center mb-3">
+            <div className="bg-green-100 p-3 rounded-full">
+              <FaKey className="text-green-600 text-xl" />
+            </div>
+          </div>
+
+          {/* 🧠 UPDATED TITLE */}
+          <h2 className="mb-2 font-semibold text-center text-lg text-gray-800">
+            Secure Access Key
+          </h2>
+
+          {/* 📝 INSTRUCTION */}
+          <p className="text-sm text-gray-500 text-center mb-4 leading-relaxed">
+            Enter your unique key to access your private data space. Same key =
+            same data.
+          </p>
 
           <input
             value={accessKey}
             onChange={(e) => setAccessKey(e.target.value)}
-            className="border px-3 py-3 rounded-lg w-full mb-4"
+            placeholder="e.g. my-secret-key"
+            className="border px-3 py-3 rounded-lg w-full mb-4 focus:ring-2 focus:ring-green-500 outline-none"
           />
 
           <button
             onClick={saveKey}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg"
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition active:scale-95"
           >
             Continue
           </button>
